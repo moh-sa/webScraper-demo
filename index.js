@@ -5,15 +5,68 @@ const express = require("express");
 
 const app = express();
 
-const URL =
-  "https://www.aljazeera.net/news/2022/12/26/%D8%B9%D8%A7%D8%AC%D9%84-%D8%AA%D8%A7%D8%B3-%D8%B9%D9%86-%D8%A7%D9%84%D8%AF%D9%81%D8%A7%D8%B9-%D8%A7%D9%84%D8%B1%D9%88%D8%B3%D9%8A%D8%A9-%D8%A7%D9%84%D8%AA%D8%AC%D9%87%D9%8A%D8%B2%D8%A7%D8%AA";
+/**
+ *
+ * @param {string} baseDomain - https://www.aljazeera.net
+ * @param {string} subdirectory - /news
+ * @returns {Array of Objects} - have the final result
+ */
+const getList = async (baseDomain, subdirectory) => {
+  try {
+    const links = [];
+    const articles = [];
+    const { data } = await axios(baseDomain + subdirectory);
+    const $ = cheerio.load(data);
+    $("#news-feed-container", data).each(function () {
+      $(this)
+        .find("article")
+        .each(function () {
+          const link = $(this).find("a").attr("href");
+          links.push(link);
+        });
+    });
 
-axios(URL)
-  .then((res) => {
-    const html = res.data;
-    const $ = cheerio.load(html);
-    console.log($("#main-content-area").html());
-  })
-  .catch((err) => console.log(err));
+    await Promise.all(
+      links.map(async (x) => {
+        const test = await getContent(`${baseDomain}${x}`, baseDomain);
+        articles.push(test);
+      })
+    );
+    return articles;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+/**
+ *
+ * @param {String} fetchLink - singe article URL
+ * @param {String} imgDomain - the domain used for imgs
+ * @returns {Object} - single article data {title, imgURL, date, body}
+ */
+const getContent = async (fetchLink, imgDomain) => {
+  try {
+    const { data } = await axios(fetchLink);
+    const $ = cheerio.load(data);
+    const title = $("#main-content-area h1").text();
+    const figure = $("#main-content-area figure", data);
+    const image = figure.find("img").attr("src").split("?")[0];
+    const imgURL = imgDomain + image;
+    const date = $("#main-content-area .article-b-l").text().split("-")[0];
+    const body = $(".wysiwyg--all-content")
+      .text()
+      .replace(/(\r\n|\n|\r|\t)/gm, "");
+    return { title, imgURL, date, body };
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+app.get("/", async (req, res) => {
+  const baseDomain = req.query.bd;
+  const subdirectory = req.query.sd;
+  const data = await getList(baseDomain, subdirectory);
+  res.json(data);
+});
 
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
