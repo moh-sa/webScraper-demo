@@ -64,8 +64,8 @@ const getContent = async (fetchLink, imgDomain) => {
 
 app.get("/", async (req, res) => {
   const baseDomain = req.query.bd;
-  const subdirectory = req.query.sd;
-  const data = await getList(baseDomain, subdirectory);
+  const subDirectory = req.query.sd;
+  const data = await getList(baseDomain, subDirectory);
   res.json(data);
 });
 
