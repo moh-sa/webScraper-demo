@@ -2,7 +2,7 @@
 
 A web scrapper using NodeJs, Cheerio, and Axios.
 
-another suggestion: Puppeteer
+another suggestion: Puppeteer (https://www.youtube.com/watch?v=9zwyfrVv3hg)
 
 based on a tutorial from Ania Kubów (https://youtu.be/-3lqUHeZs_0)
 
